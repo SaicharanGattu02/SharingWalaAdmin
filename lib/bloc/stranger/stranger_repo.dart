@@ -22,6 +22,8 @@ class StrangerRepo {
 
   Future<List<StrangerReelItem>> getReels() => remoteDataSource.getStrangerReels();
 
+  Future<bool> createReel(Map<String, dynamic> data) => remoteDataSource.createStrangerReel(data);
+
   Future<bool> deleteReel(String id) => remoteDataSource.deleteStrangerReel(id);
 }
 

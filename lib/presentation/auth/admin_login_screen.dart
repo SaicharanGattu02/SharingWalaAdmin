@@ -199,29 +199,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               style: AppTextStyles.button.copyWith(fontSize: 15, fontWeight: FontWeight.w700),
                             ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Demo Helper Box
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white10),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.info_outline, color: AppColors.primary, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Default: admin@share2go.com / Admin@123',
-                              style: AppTextStyles.caption.copyWith(color: Colors.white70),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),

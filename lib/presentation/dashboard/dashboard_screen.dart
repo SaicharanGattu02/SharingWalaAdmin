@@ -147,6 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         icon: Icons.people_outline,
                         iconColor: const Color(0xFF3B82F6),
                         trend: '+14% MoM',
+                        onTap: () => context.go('/users'),
                       ),
                       StatCard(
                         title: 'Verified Drivers',
@@ -157,6 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         iconBgColor: AppColors.warningBg,
                         trend: '${stats.pendingDrivers} Pending',
                         isTrendPositive: stats.pendingDrivers == 0,
+                        onTap: () => context.go('/drivers'),
                       ),
                       StatCard(
                         title: 'Active Rides',
@@ -166,6 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         iconColor: AppColors.success,
                         iconBgColor: AppColors.successBg,
                         trend: 'Live Now',
+                        onTap: () => context.go('/rides'),
                       ),
                       StatCard(
                         title: 'Open Safety Reports',
@@ -176,6 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         iconBgColor: AppColors.errorBg,
                         trend: stats.openReports > 0 ? 'Requires Action' : 'Clear',
                         isTrendPositive: stats.openReports == 0,
+                        onTap: () => context.go('/reports'),
                       ),
                     ],
                   ),
@@ -191,6 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           subtitle: 'Passenger confirmed seats',
                           icon: Icons.confirmation_number_outlined,
                           iconColor: const Color(0xFF8B5CF6),
+                          onTap: () => context.go('/rides'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -201,6 +206,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           subtitle: '${stats.pendingVehicles} verification queued',
                           icon: Icons.two_wheeler_outlined,
                           iconColor: const Color(0xFFEC4899),
+                          onTap: () => context.go('/vehicles'),
                         ),
                       ),
                       if (!isMobile) ...[
@@ -212,6 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             subtitle: 'Corporate & campus networks',
                             icon: Icons.corporate_fare_outlined,
                             iconColor: const Color(0xFF14B8A6),
+                            onTap: () => context.go('/communities'),
                           ),
                         ),
                       ],

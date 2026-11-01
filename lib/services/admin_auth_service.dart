@@ -43,6 +43,14 @@ class AdminAuthService {
     return token != null && token.isNotEmpty;
   }
 
+  static Future<void> updateTokens(String accessToken, [String? refreshToken]) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyToken, accessToken);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await prefs.setString(_keyRefreshToken, refreshToken);
+    }
+  }
+
   static Future<void> clearAuth() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyToken);

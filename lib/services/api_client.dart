@@ -31,10 +31,62 @@ class ApiClient {
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
-          if (error.response?.statusCode == 401) {
-            // Token expired or invalid
+          // If error is from the refresh endpoint itself, clear auth and forward
+          if (error.requestOptions.path.contains('/auth/refresh')) {
             await AdminAuthService.clearAuth();
+            return handler.next(error);
           }
+
+          if (error.response?.statusCode == 401) {
+            final refreshToken = await AdminAuthService.getRefreshToken();
+            if (refreshToken == null || refreshToken.isEmpty) {
+              await AdminAuthService.clearAuth();
+              return handler.next(error);
+            }
+
+            try {
+              // Attempt to refresh the access token silently
+              final refreshResponse = await dio.post(
+                AdminEndpoints.refresh,
+                data: {'refreshToken': refreshToken},
+              );
+
+              final respMap = refreshResponse.data is Map<String, dynamic>
+                  ? refreshResponse.data as Map<String, dynamic>
+                  : <String, dynamic>{};
+              final dataMap = respMap['data'] is Map<String, dynamic>
+                  ? respMap['data'] as Map<String, dynamic>
+                  : respMap;
+
+              final isSuccess = refreshResponse.statusCode == 200 &&
+                  (respMap['success'] == true || respMap['statusCode'] == 200);
+
+              if (isSuccess &&
+                  (dataMap['accessToken'] != null ||
+                      dataMap['token'] != null ||
+                      respMap['accessToken'] != null)) {
+                final newAccessToken = (dataMap['accessToken'] ??
+                        dataMap['token'] ??
+                        respMap['accessToken'] ??
+                        respMap['token'])
+                    .toString();
+                final newRefreshToken =
+                    (dataMap['refreshToken'] ?? respMap['refreshToken'])?.toString();
+
+                await AdminAuthService.updateTokens(newAccessToken, newRefreshToken);
+
+                // Retry original request with the fresh access token
+                final options = error.requestOptions;
+                options.headers['Authorization'] = 'Bearer $newAccessToken';
+                final retryResponse = await dio.fetch(options);
+                return handler.resolve(retryResponse);
+              }
+            } catch (_) {
+              await AdminAuthService.clearAuth();
+              return handler.next(error);
+            }
+          }
+
           return handler.next(error);
         },
       ),
@@ -54,4 +106,3 @@ class ApiClient {
     return dio;
   }
 }
-

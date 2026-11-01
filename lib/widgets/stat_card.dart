@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 
-class StatCard extends StatelessWidget {
+class StatCard extends StatefulWidget {
   final String title;
   final String value;
   final String? subtitle;
@@ -29,23 +29,38 @@ class StatCard extends StatelessWidget {
   });
 
   @override
+  State<StatCard> createState() => _StatCardState();
+}
+
+class _StatCardState extends State<StatCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final cardContent = Container(
+    final isClickable = widget.onTap != null;
+
+    final cardContent = AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeInOut,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? iconColor : AppColors.lightBorder,
-          width: isSelected ? 2 : 1,
+          color: widget.isSelected
+              ? widget.iconColor
+              : (_isHovered ? widget.iconColor.withValues(alpha: 0.5) : AppColors.lightBorder),
+          width: widget.isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: isSelected
-                ? iconColor.withValues(alpha: 0.15)
-                : Colors.black.withValues(alpha: 0.02),
-            blurRadius: isSelected ? 12 : 10,
-            offset: const Offset(0, 4),
+            color: widget.isSelected
+                ? widget.iconColor.withValues(alpha: 0.2)
+                : (_isHovered
+                    ? widget.iconColor.withValues(alpha: 0.12)
+                    : Colors.black.withValues(alpha: 0.03)),
+            blurRadius: widget.isSelected || _isHovered ? 16 : 8,
+            offset: Offset(0, _isHovered ? 6 : 3),
           ),
         ],
       ),
@@ -56,57 +71,63 @@ class StatCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: AppTextStyles.subtitle.copyWith(
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  fontSize: 13,
-                  color: isSelected ? const Color(0xFF0F172A) : null,
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: 13,
+                    color: widget.isSelected
+                        ? const Color(0xFF0F172A)
+                        : (_isHovered ? const Color(0xFF0F172A) : null),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconBgColor ?? iconColor.withValues(alpha: 0.12),
+                  color: widget.iconBgColor ?? widget.iconColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: iconColor, size: 20),
+                child: Icon(widget.icon, color: widget.iconColor, size: 20),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            value,
+            widget.value,
             style: AppTextStyles.h1.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),
-          if (subtitle != null || trend != null)
+          if (widget.subtitle != null || widget.trend != null)
             Row(
               children: [
-                if (trend != null) ...[
+                if (widget.trend != null) ...[
                   Icon(
-                    isTrendPositive ? Icons.trending_up : Icons.trending_down,
+                    widget.isTrendPositive ? Icons.trending_up : Icons.trending_down,
                     size: 16,
-                    color: isTrendPositive ? AppColors.success : AppColors.error,
+                    color: widget.isTrendPositive ? AppColors.success : AppColors.error,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    trend!,
+                    widget.trend!,
                     style: TextStyle(
-                      color: isTrendPositive ? AppColors.success : AppColors.error,
+                      color: widget.isTrendPositive ? AppColors.success : AppColors.error,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 8),
                 ],
-                if (subtitle != null)
+                if (widget.subtitle != null)
                   Expanded(
                     child: Text(
-                      subtitle!,
+                      widget.subtitle!,
                       style: AppTextStyles.caption,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -118,12 +139,14 @@ class StatCard extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+    if (isClickable) {
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          behavior: HitTestBehavior.opaque,
           child: cardContent,
         ),
       );
@@ -132,4 +155,3 @@ class StatCard extends StatelessWidget {
     return cardContent;
   }
 }
-

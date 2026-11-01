@@ -58,6 +58,16 @@ class StrangerCubit extends Cubit<StrangerState> {
     }
   }
 
+  Future<bool> createReel(Map<String, dynamic> data) async {
+    try {
+      final ok = await repo.createReel(data);
+      if (ok) await fetchAllStrangerData();
+      return ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> deleteReel(String id) async {
     try {
       final ok = await repo.deleteReel(id);

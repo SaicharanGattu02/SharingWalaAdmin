@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../bloc/stranger/stranger_cubit.dart';
 import '../../bloc/stranger/stranger_state.dart';
 import '../../core/theme/app_colors.dart';
@@ -8,6 +9,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../models/admin_models.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/reel_video_player.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/stat_card.dart';
 import '../../widgets/status_badge.dart';
@@ -434,75 +436,167 @@ class _StrangerScreenState extends State<StrangerScreen> with SingleTickerProvid
   }
 
   void _showReelDetailsDialog(StrangerReelItem reel) {
+    final playableVideoUrl = (reel.videoUrl.isNotEmpty && reel.videoUrl.startsWith('http'))
+        ? reel.videoUrl
+        : 'https://vjs.zencdn.net/v/oceans.mp4';
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        clipBehavior: Clip.antiAlias,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 420),
+          constraints: const BoxConstraints(maxWidth: 440, maxHeight: 780),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF334155), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 32,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
-                children: [
-                  Image.network(
-                    reel.thumbnailUrl ?? 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
-                    height: 260,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(height: 260, color: Colors.black87),
-                  ),
-                  Positioned.fill(
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 36),
+              // Header with Title & Close Button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.movie_creation_rounded, color: AppColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '@${reel.userName}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const Text(
+                            'Live Stranger Video Reel',
+                            style: TextStyle(color: Colors.white60, fontSize: 11),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                      onPressed: () => Navigator.pop(ctx),
+                      tooltip: 'Close Player',
+                    ),
+                  ],
+                ),
               ),
+
+              // Embedded Video Player Canvas (max 440px height)
+              Flexible(
+                child: Container(
+                  height: 440,
+                  width: double.infinity,
+                  color: Colors.black,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.zero,
+                    child: getReelVideoPlayer(playableVideoUrl, viewId: reel.id),
+                  ),
+                ),
+              ),
+
+              // Reel Info & Moderation Action Bar
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('@${reel.userName}', style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 15)),
-                    const SizedBox(height: 6),
-                    Text(reel.title, style: AppTextStyles.bodyBold),
+                    Text(
+                      reel.title,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     if (reel.description != null && reel.description!.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(reel.description!, style: AppTextStyles.caption),
+                      Text(
+                        reel.description!,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         const Icon(Icons.favorite, size: 16, color: Colors.redAccent),
                         const SizedBox(width: 4),
-                        Text('${reel.likesCount} Likes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        Text('${reel.likesCount} Likes', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                         const SizedBox(width: 16),
                         const Icon(Icons.comment, size: 16, color: Colors.blueGrey),
                         const SizedBox(width: 4),
-                        Text('${reel.commentsCount} Comments', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        Text('${reel.commentsCount} Comments', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        const Spacer(),
+                        // Open in Fullscreen Tab button
+                        TextButton.icon(
+                          onPressed: () async {
+                            final uri = Uri.parse(playableVideoUrl);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          icon: const Icon(Icons.open_in_new_rounded, size: 14, color: AppColors.primary),
+                          label: const Text(
+                            'Open Link',
+                            style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF475569)),
+                              foregroundColor: Colors.white70,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Dismiss'),
+                          ),
+                        ),
                         const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _deleteReel(reel);
-                          },
-                          icon: const Icon(Icons.delete_outline, size: 16),
-                          label: const Text('Delete Reel'),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _deleteReel(reel);
+                            },
+                            icon: const Icon(Icons.delete_outline, size: 16),
+                            label: const Text('Delete Reel'),
+                          ),
                         ),
                       ],
                     ),
@@ -512,6 +606,334 @@ class _StrangerScreenState extends State<StrangerScreen> with SingleTickerProvid
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showCreateReelDialog() {
+    final formKey = GlobalKey<FormState>();
+    final videoUrlController = TextEditingController();
+    final captionController = TextEditingController();
+    final creatorController = TextEditingController();
+    final routeController = TextEditingController();
+    final thumbnailController = TextEditingController();
+    final audioController = TextEditingController(text: 'Original Sound • Instagram Trending');
+    String selectedVibe = 'weekendGetaway';
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 580),
+              padding: const EdgeInsets.all(28),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(Icons.video_library_rounded, color: AppColors.primaryDark, size: 28),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Publish Video Reel',
+                                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Upload Instagram reel link or video stream to app feed',
+                                  style: TextStyle(fontSize: 12.5, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(dialogCtx),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 16),
+
+                      // Instagram Reel / Video URL
+                      const Text(
+                        'Instagram Reel or Video Stream URL *',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: videoUrlController,
+                        decoration: InputDecoration(
+                          hintText: 'https://www.instagram.com/reel/Cxxxx/ or https://domain.com/video.mp4',
+                          prefixIcon: const Icon(Icons.link_rounded, color: AppColors.primaryDark),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter Instagram link or video URL';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Caption / Title
+                      const Text(
+                        'Reel Caption / Title *',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: captionController,
+                        maxLines: 2,
+                        decoration: InputDecoration(
+                          hintText: 'e.g. Sunset coastal drive heading to Goa! #GoaTrip #RoadTrip',
+                          prefixIcon: const Icon(Icons.subtitles_rounded, color: AppColors.primaryDark),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Please enter a caption or title';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Row: Creator & Route
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Creator Username',
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: creatorController,
+                                  decoration: InputDecoration(
+                                    hintText: '@creator or Community',
+                                    prefixIcon: const Icon(Icons.person_outline, size: 20),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Travel Route / Highway',
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: routeController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Mumbai ➔ Goa Highway',
+                                    prefixIcon: const Icon(Icons.alt_route_rounded, size: 20),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Row: Vibe & Audio Track
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Travel Vibe',
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                ),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  value: selectedVibe,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(value: 'weekendGetaway', child: Text('Weekend Getaway')),
+                                    DropdownMenuItem(value: 'roadTrip', child: Text('Road Trip')),
+                                    DropdownMenuItem(value: 'cityExplore', child: Text('City Explore')),
+                                    DropdownMenuItem(value: 'backpacking', child: Text('Backpacking')),
+                                    DropdownMenuItem(value: 'eventConcert', child: Text('Event & Concert')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setDialogState(() => selectedVibe = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Audio Track Name',
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: audioController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Original Sound',
+                                    prefixIcon: const Icon(Icons.audiotrack_rounded, size: 20),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Custom Cover / Thumbnail (Optional)
+                      const Text(
+                        'Cover Photo / Thumbnail URL (Optional)',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: thumbnailController,
+                        decoration: InputDecoration(
+                          hintText: 'https://images.unsplash.com/... (auto-generated if empty)',
+                          prefixIcon: const Icon(Icons.image_outlined, size: 20),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Action Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                            child: const Text('Cancel'),
+                          ),
+                          const SizedBox(width: 14),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: const Color(0xFF0F172A),
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 2,
+                            ),
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    if (!formKey.currentState!.validate()) return;
+                                    setDialogState(() => isSubmitting = true);
+
+                                    final payload = {
+                                      'videoUrl': videoUrlController.text.trim(),
+                                      'caption': captionController.text.trim(),
+                                      'userName': creatorController.text.trim().isNotEmpty
+                                          ? creatorController.text.trim()
+                                          : 'SharingWala Creator',
+                                      'route': routeController.text.trim().isNotEmpty
+                                          ? routeController.text.trim()
+                                          : 'Scenic Highway Drive',
+                                      'vibe': selectedVibe,
+                                      'audioTrack': audioController.text.trim().isNotEmpty
+                                          ? audioController.text.trim()
+                                          : 'Original Sound',
+                                      if (thumbnailController.text.trim().isNotEmpty)
+                                        'thumbnailUrl': thumbnailController.text.trim(),
+                                    };
+
+                                    final ok = await context.read<StrangerCubit>().createReel(payload);
+
+                                    if (mounted) {
+                                      Navigator.pop(dialogCtx);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            ok
+                                                ? '🎉 Video Reel published! It is now live in both mobile app and web feed.'
+                                                : 'Failed to publish reel. Please verify the URL.',
+                                          ),
+                                          backgroundColor: ok ? AppColors.success : AppColors.error,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
+                                  },
+                            icon: isSubmitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F172A)),
+                                  )
+                                : const Icon(Icons.cloud_upload_rounded, size: 20),
+                            label: Text(
+                              isSubmitting ? 'Publishing Reel...' : 'Publish Reel to App & Feed',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1082,97 +1504,145 @@ class _StrangerScreenState extends State<StrangerScreen> with SingleTickerProvid
                 (r.description ?? '').toLowerCase().contains(_searchQuery);
           }).toList();
 
-    if (reels.isEmpty) {
-      return EmptyState(
-        title: _searchQuery.isEmpty ? 'No reels published' : 'No reels match "$_searchQuery"',
-        message: _searchQuery.isEmpty ? 'No stranger video reels found.' : 'Try adjusting your search query.',
-      );
-    }
-
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isMobile ? 2 : 4,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.65,
-      ),
-      itemCount: reels.length,
-      itemBuilder: (context, i) {
-        final r = reels[i];
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _showReelDetailsDialog(r),
-            borderRadius: BorderRadius.circular(12),
-            child: Card(
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    r.thumbnailUrl ?? 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.black87),
-                  ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.transparent, Colors.black87],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: IconButton(
-                      style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                      icon: const Icon(Icons.delete_outline, color: Colors.white, size: 18),
-                      tooltip: 'Moderate Reel',
-                      onPressed: () => _deleteReel(r),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 12,
-                    left: 12,
-                    right: 12,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '@${r.userName}',
-                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          r.title,
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.favorite, size: 14, color: Colors.redAccent),
-                            const SizedBox(width: 4),
-                            Text('${r.likesCount}', style: const TextStyle(color: Colors.white, fontSize: 11)),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.comment, size: 14, color: Colors.white70),
-                            const SizedBox(width: 4),
-                            Text('${r.commentsCount}', style: const TextStyle(color: Colors.white, fontSize: 11)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Top Toolbar
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${reels.length} Video Reels Active',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
               ),
-            ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: const Color(0xFF0F172A),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
+                ),
+                onPressed: _showCreateReelDialog,
+                icon: const Icon(Icons.video_library_rounded, size: 20),
+                label: const Text(
+                  '+ Upload Reel / Instagram Link',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+
+        // Reels Content (Empty State or Grid)
+        Expanded(
+          child: reels.isEmpty
+              ? EmptyState(
+                  title: _searchQuery.isEmpty ? 'No reels published' : 'No reels match "$_searchQuery"',
+                  message: _searchQuery.isEmpty ? 'Click "+ Upload Reel / Instagram Link" above to publish your first reel.' : 'Try adjusting your search query.',
+                )
+              : GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isMobile ? 2 : 4,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.65,
+                  ),
+                  itemCount: reels.length,
+                  itemBuilder: (context, i) {
+                    final r = reels[i];
+
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showReelDetailsDialog(r),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                r.thumbnailUrl ?? 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(color: Colors.black87),
+                              ),
+                              Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.transparent, Colors.black87],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ),
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
+                                    ),
+                                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 36),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: IconButton(
+                                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                                  icon: const Icon(Icons.delete_outline, color: Colors.white, size: 18),
+                                  tooltip: 'Moderate Reel',
+                                  onPressed: () => _deleteReel(r),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 12,
+                                left: 12,
+                                right: 12,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '@${r.userName}',
+                                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      r.title,
+                                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.favorite, size: 14, color: Colors.redAccent),
+                                        const SizedBox(width: 4),
+                                        Text('${r.likesCount}', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                        const SizedBox(width: 12),
+                                        const Icon(Icons.comment, size: 14, color: Colors.white70),
+                                        const SizedBox(width: 4),
+                                        Text('${r.commentsCount}', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

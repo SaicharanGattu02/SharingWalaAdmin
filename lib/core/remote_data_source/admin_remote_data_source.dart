@@ -36,6 +36,7 @@ abstract class AdminRemoteDataSource {
   Future<List<StrangerPlanItem>> getStrangerPlans();
   Future<bool> deleteStrangerPlan(String id);
   Future<List<StrangerReelItem>> getStrangerReels();
+  Future<bool> createStrangerReel(Map<String, dynamic> data);
   Future<bool> deleteStrangerReel(String id);
 
   // Emergency SOS & App Update
@@ -290,6 +291,12 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     final response = await dio.get(AdminEndpoints.strangerReels);
     final list = response.data['data'] as List<dynamic>? ?? [];
     return list.map((e) => StrangerReelItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<bool> createStrangerReel(Map<String, dynamic> data) async {
+    final response = await dio.post(AdminEndpoints.strangerReels, data: data);
+    return response.statusCode == 200 || response.statusCode == 201;
   }
 
   @override
