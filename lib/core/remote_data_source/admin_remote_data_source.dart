@@ -37,6 +37,12 @@ abstract class AdminRemoteDataSource {
   Future<bool> deleteStrangerPlan(String id);
   Future<List<StrangerReelItem>> getStrangerReels();
   Future<bool> deleteStrangerReel(String id);
+
+  // Emergency SOS & App Update
+  Future<List<AdminSosIncidentItem>> getSosIncidents({String? status, String? search});
+  Future<bool> updateSosStatus(String incidentId, String status, String adminNotes);
+  Future<AppUpdateConfigModel?> getAppUpdateConfig();
+  Future<bool> updateAppUpdateConfig(Map<String, dynamic> config);
 }
 
 class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
@@ -289,6 +295,52 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<bool> deleteStrangerReel(String id) async {
     final response = await dio.delete(AdminEndpoints.strangerReelDetails(id));
+    return response.statusCode == 200;
+  }
+
+  @override
+  Future<List<AdminSosIncidentItem>> getSosIncidents({String? status, String? search}) async {
+    final query = <String, dynamic>{};
+    if (status != null && status.isNotEmpty) query['status'] = status;
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    final response = await dio.get(AdminEndpoints.sos, queryParameters: query);
+    final data = response.data['data'] as Map<String, dynamic>? ?? {};
+    final list = data['incidents'] as List<dynamic>? ?? [];
+    return list.map((e) => AdminSosIncidentItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<bool> updateSosStatus(String incidentId, String status, String adminNotes) async {
+    final response = await dio.put(
+      AdminEndpoints.updateSosStatus(incidentId),
+      data: {
+        'status': status,
+        'adminNotes': adminNotes,
+      },
+    );
+    return response.statusCode == 200;
+  }
+
+  @override
+  Future<AppUpdateConfigModel?> getAppUpdateConfig() async {
+    final response = await dio.get(AdminEndpoints.appConfig);
+    final data = response.data['data'] as Map<String, dynamic>?;
+    if (data != null) {
+      final androidConfig = data['android'] as Map<String, dynamic>? ?? data;
+      return AppUpdateConfigModel.fromJson(androidConfig);
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> updateAppUpdateConfig(Map<String, dynamic> config) async {
+    final response = await dio.put(
+      AdminEndpoints.appConfig,
+      data: {
+        'android': config,
+        'ios': config,
+      },
+    );
     return response.statusCode == 200;
   }
 }

@@ -754,4 +754,126 @@ class StrangerReelItem {
   }
 }
 
+class AdminSosIncidentItem {
+  final String id;
+  final String userId;
+  final String userName;
+  final String userPhone;
+  final String? userEmail;
+  final String? rideId;
+  final String? driverName;
+  final String? driverPhone;
+  final String? vehiclePlate;
+  final String? vehicleModel;
+  final double latitude;
+  final double longitude;
+  final String address;
+  final String emergencyType;
+  final String? notes;
+  final String status;
+  final String? adminNotes;
+  final String? resolvedBy;
+  final String? resolvedAt;
+  final String createdAt;
+  final String updatedAt;
+
+  const AdminSosIncidentItem({
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.userPhone,
+    this.userEmail,
+    this.rideId,
+    this.driverName,
+    this.driverPhone,
+    this.vehiclePlate,
+    this.vehicleModel,
+    required this.latitude,
+    required this.longitude,
+    required this.address,
+    required this.emergencyType,
+    this.notes,
+    required this.status,
+    this.adminNotes,
+    this.resolvedBy,
+    this.resolvedAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory AdminSosIncidentItem.fromJson(Map<String, dynamic> json) {
+    final rideDetails = json['rideDetails'] as Map<String, dynamic>? ?? {};
+
+    return AdminSosIncidentItem(
+      id: json['id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
+      userName: json['userName']?.toString() ?? 'SharingWala User',
+      userPhone: json['userPhone']?.toString() ?? 'N/A',
+      userEmail: json['userEmail']?.toString(),
+      rideId: json['rideId']?.toString(),
+      driverName: rideDetails['driverName']?.toString() ?? json['driverName']?.toString(),
+      driverPhone: rideDetails['driverPhone']?.toString() ?? json['driverPhone']?.toString(),
+      vehiclePlate: rideDetails['vehiclePlate']?.toString() ?? json['vehiclePlate']?.toString(),
+      vehicleModel: rideDetails['vehicleModel']?.toString() ?? json['vehicleModel']?.toString(),
+      latitude: _toDouble(json['latitude']) != 0 ? _toDouble(json['latitude']) : 17.448293,
+      longitude: _toDouble(json['longitude']) != 0 ? _toDouble(json['longitude']) : 78.391487,
+      address: json['address']?.toString() ?? 'Live Coordinates',
+      emergencyType: json['emergencyType']?.toString() ?? 'SAFETY_THREAT',
+      notes: json['notes']?.toString(),
+      status: json['status']?.toString().toUpperCase() ?? 'ACTIVE',
+      adminNotes: json['adminNotes']?.toString(),
+      resolvedBy: json['resolvedBy']?.toString(),
+      resolvedAt: json['resolvedAt']?.toString(),
+      createdAt: json['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
+      updatedAt: json['updatedAt']?.toString() ?? DateTime.now().toIso8601String(),
+    );
+  }
+}
+
+class AppUpdateConfigModel {
+  final String latestVersion;
+  final String minSupportedVersion;
+  final bool forceUpdate;
+  final String title;
+  final String message;
+  final List<String> releaseNotes;
+  final String storeUrl;
+  final bool enabled;
+
+  const AppUpdateConfigModel({
+    required this.latestVersion,
+    required this.minSupportedVersion,
+    required this.forceUpdate,
+    required this.title,
+    required this.message,
+    required this.releaseNotes,
+    required this.storeUrl,
+    required this.enabled,
+  });
+
+  factory AppUpdateConfigModel.fromJson(Map<String, dynamic> json) {
+    return AppUpdateConfigModel(
+      latestVersion: json['latestVersion']?.toString() ?? '1.0.0',
+      minSupportedVersion: json['minSupportedVersion']?.toString() ?? '1.0.0',
+      forceUpdate: json['forceUpdate'] == true,
+      title: json['title']?.toString() ?? 'App Update Available',
+      message: json['message']?.toString() ?? '',
+      releaseNotes: (json['releaseNotes'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      storeUrl: json['storeUrl']?.toString() ?? '',
+      enabled: json['enabled'] != false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'latestVersion': latestVersion,
+        'minSupportedVersion': minSupportedVersion,
+        'forceUpdate': forceUpdate,
+        'title': title,
+        'message': message,
+        'releaseNotes': releaseNotes,
+        'storeUrl': storeUrl,
+        'enabled': enabled,
+      };
+}
+
 

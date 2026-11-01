@@ -61,13 +61,22 @@ class AdminSidebar extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    'assets/images/app_logo.png',
+                    width: 38,
+                    height: 38,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.bolt, color: Color(0xFF0F172A), size: 20),
+                    ),
                   ),
-                  child: const Icon(Icons.bolt, color: Color(0xFF0F172A), size: 20),
                 ),
                 if (!isCollapsed) ...[
                   const SizedBox(width: 12),

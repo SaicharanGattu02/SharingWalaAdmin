@@ -1,11 +1,11 @@
 {
-    "name": "sharingwalaadmin",
-    "short_name": "sharingwalaadmin",
+    "name": "SharingWala Admin Console",
+    "short_name": "SharingWala Admin",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0B132B",
+    "theme_color": "#FFC107",
+    "description": "SharingWala Admin Console & Operations Dispatch Center",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

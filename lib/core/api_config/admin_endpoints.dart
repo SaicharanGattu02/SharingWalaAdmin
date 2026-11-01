@@ -75,5 +75,13 @@ class AdminEndpoints {
   static String strangerPlanDetails(String id) => '$baseUrl/stranger/plans/$id';
   static const String strangerReels = '$baseUrl/stranger/reels';
   static String strangerReelDetails(String id) => '$baseUrl/stranger/reels/$id';
+
+  // Emergency SOS Monitoring
+  static const String sos = '$baseUrl/sos';
+  static String sosDetails(String id) => '$baseUrl/sos/$id';
+  static String updateSosStatus(String id) => '$baseUrl/sos/$id/status';
+
+  // Platform & App Update Config
+  static const String appConfig = 'http://localhost:5000/api/v1/common/config';
 }
 
