@@ -11,6 +11,8 @@ class StatCard extends StatelessWidget {
   final Color? iconBgColor;
   final String? trend;
   final bool isTrendPositive;
+  final VoidCallback? onTap;
+  final bool isSelected;
 
   const StatCard({
     super.key,
@@ -22,20 +24,27 @@ class StatCard extends StatelessWidget {
     this.iconBgColor,
     this.trend,
     this.isTrendPositive = true,
+    this.onTap,
+    this.isSelected = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final cardContent = Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightBorder),
+        border: Border.all(
+          color: isSelected ? iconColor : AppColors.lightBorder,
+          width: isSelected ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
+            color: isSelected
+                ? iconColor.withValues(alpha: 0.15)
+                : Colors.black.withValues(alpha: 0.02),
+            blurRadius: isSelected ? 12 : 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -50,8 +59,9 @@ class StatCard extends StatelessWidget {
               Text(
                 title,
                 style: AppTextStyles.subtitle.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   fontSize: 13,
+                  color: isSelected ? const Color(0xFF0F172A) : null,
                 ),
               ),
               Container(
@@ -107,6 +117,19 @@ class StatCard extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: cardContent,
+        ),
+      );
+    }
+
+    return cardContent;
   }
 }
 
