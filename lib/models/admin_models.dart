@@ -267,6 +267,18 @@ class AdminVehicleItem {
   final String model;
   final String status;
   final String? driverName;
+  final String? driverPhone;
+  final String? driverEmail;
+  final int year;
+  final String color;
+  final int seatCapacity;
+  final String fuelType;
+  final String? rcDocumentUrl;
+  final String? insurancePolicyNumber;
+  final String? insuranceProvider;
+  final String? insuranceValidUntil;
+  final String? insuranceDocumentUrl;
+  final String? rejectedReason;
 
   AdminVehicleItem({
     required this.id,
@@ -276,11 +288,44 @@ class AdminVehicleItem {
     required this.model,
     required this.status,
     this.driverName,
+    this.driverPhone,
+    this.driverEmail,
+    this.year = 2022,
+    this.color = 'Standard',
+    this.seatCapacity = 4,
+    this.fuelType = 'PETROL',
+    this.rcDocumentUrl,
+    this.insurancePolicyNumber,
+    this.insuranceProvider,
+    this.insuranceValidUntil,
+    this.insuranceDocumentUrl,
+    this.rejectedReason,
   });
 
   factory AdminVehicleItem.fromJson(Map<String, dynamic> json) {
     final driver = json['driver'] as Map<String, dynamic>? ?? {};
     final user = driver['user'] as Map<String, dynamic>? ?? {};
+    final insurances = json['insurances'] as List<dynamic>? ?? [];
+    final verifications = json['verifications'] as List<dynamic>? ?? [];
+
+    String? rcUrl;
+    if (verifications.isNotEmpty && verifications.first is Map) {
+      final v = verifications.first as Map<String, dynamic>;
+      rcUrl = v['documentUrl']?.toString() ?? v['fileUrl']?.toString();
+    }
+    rcUrl ??= json['rcDocumentUrl']?.toString() ?? json['documentUrl']?.toString();
+
+    String? insPolicy;
+    String? insProvider;
+    String? insExpiry;
+    String? insUrl;
+    if (insurances.isNotEmpty && insurances.first is Map) {
+      final ins = insurances.first as Map<String, dynamic>;
+      insPolicy = ins['policyNumber']?.toString();
+      insProvider = ins['providerName']?.toString();
+      insExpiry = ins['validUntil']?.toString();
+      insUrl = ins['documentUrl']?.toString();
+    }
 
     return AdminVehicleItem(
       id: json['id']?.toString() ?? '',
@@ -289,7 +334,19 @@ class AdminVehicleItem {
       make: json['make']?.toString() ?? '',
       model: json['model']?.toString() ?? '',
       status: json['status']?.toString() ?? 'PENDING',
-      driverName: user['displayName']?.toString() ?? 'Driver',
+      driverName: user['displayName']?.toString() ?? json['driverName']?.toString() ?? 'Driver',
+      driverPhone: user['phone']?.toString() ?? json['driverPhone']?.toString(),
+      driverEmail: user['email']?.toString() ?? json['driverEmail']?.toString(),
+      year: _toInt(json['year'], 2022),
+      color: json['color']?.toString() ?? 'Standard',
+      seatCapacity: _toInt(json['seatCapacity'], 4),
+      fuelType: json['fuelType']?.toString() ?? 'PETROL',
+      rcDocumentUrl: rcUrl,
+      insurancePolicyNumber: insPolicy,
+      insuranceProvider: insProvider,
+      insuranceValidUntil: insExpiry,
+      insuranceDocumentUrl: insUrl,
+      rejectedReason: json['rejectedReason']?.toString(),
     );
   }
 }
@@ -307,6 +364,10 @@ class AdminRideItem {
   final int totalSeats;
   final int availableSeats;
   final String? driverName;
+  final String? driverPhone;
+  final String? vehiclePlate;
+  final String? vehicleModel;
+  final double pricePerSeat;
 
   AdminRideItem({
     required this.id,
@@ -317,21 +378,32 @@ class AdminRideItem {
     required this.totalSeats,
     required this.availableSeats,
     this.driverName,
+    this.driverPhone,
+    this.vehiclePlate,
+    this.vehicleModel,
+    this.pricePerSeat = 0.0,
   });
 
   factory AdminRideItem.fromJson(Map<String, dynamic> json) {
     final driver = json['driver'] as Map<String, dynamic>? ?? {};
     final user = driver['user'] as Map<String, dynamic>? ?? {};
+    final vehicle = json['vehicle'] as Map<String, dynamic>? ?? {};
 
     return AdminRideItem(
       id: json['id']?.toString() ?? '',
-      startLocationName: json['startLocationName']?.toString() ?? '',
-      endLocationName: json['endLocationName']?.toString() ?? '',
+      startLocationName: json['startLocationName']?.toString() ?? json['departureAddress']?.toString() ?? '',
+      endLocationName: json['endLocationName']?.toString() ?? json['destinationAddress']?.toString() ?? '',
       departureAt: json['departureAt']?.toString() ?? '',
       status: json['status']?.toString() ?? 'PUBLISHED',
       totalSeats: _toInt(json['totalSeats']),
       availableSeats: _toInt(json['availableSeats']),
-      driverName: user['displayName']?.toString() ?? 'Driver',
+      driverName: user['displayName']?.toString() ?? json['driverName']?.toString() ?? 'Driver',
+      driverPhone: user['phone']?.toString() ?? json['driverPhone']?.toString(),
+      vehiclePlate: vehicle['registrationNumber']?.toString() ?? vehicle['plateNumber']?.toString() ?? json['vehiclePlate']?.toString(),
+      vehicleModel: '${vehicle['make'] ?? ""} ${vehicle['model'] ?? ""}'.trim().isNotEmpty 
+          ? '${vehicle['make'] ?? ""} ${vehicle['model'] ?? ""}'.trim() 
+          : json['vehicleModel']?.toString(),
+      pricePerSeat: _toDouble(json['pricePerSeat'] ?? json['fare'] ?? json['price']),
     );
   }
 }

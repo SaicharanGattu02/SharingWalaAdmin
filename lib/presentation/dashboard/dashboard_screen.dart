@@ -131,6 +131,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Live SOS Alert Quick-Access Card
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.emergency_rounded, color: Colors.red, size: 24),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '24/7 Real-Time Emergency SOS Dispatch Command',
+                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 14),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Active beacons immediately sync passenger live GPS coordinates, vehicle details & 112 dispatch tools.',
+                                style: TextStyle(color: Colors.red.shade900, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.shield_outlined, size: 16),
+                          label: const Text('Open Radar', style: TextStyle(fontWeight: FontWeight.bold)),
+                          onPressed: () => context.go('/sos'),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // Metric Stat Cards Grid
                   GridView.count(
                     crossAxisCount: crossAxisCount,
@@ -234,6 +287,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         children: [
+                          _buildActionTile(
+                            context,
+                            icon: Icons.emergency_rounded,
+                            iconColor: Colors.red,
+                            title: 'Emergency SOS Radar & Dispatch',
+                            subtitle: 'Monitor active SOS alerts, passenger coordinates & dispatch hotlines',
+                            count: 0,
+                            route: '/sos',
+                          ),
+                          const Divider(),
                           _buildActionTile(
                             context,
                             icon: Icons.verified_user,

@@ -43,7 +43,9 @@ class AdminRouter {
           final loc = state.matchedLocation;
           String title = 'Dashboard';
 
-          if (loc.startsWith('/users')) {
+          if (loc.startsWith('/sos')) {
+            title = 'Emergency SOS Command Center';
+          } else if (loc.startsWith('/users')) {
             title = 'Users Directory';
           } else if (loc.startsWith('/drivers')) {
             title = 'Driver Verification';
@@ -54,7 +56,7 @@ class AdminRouter {
           } else if (loc.startsWith('/stranger')) {
             title = 'Stranger Section (Trips, Meetups, Plans & Reels)';
           } else if (loc.startsWith('/reports')) {
-            title = 'Trust & Safety';
+            title = 'Trust & Safety Reports';
           } else if (loc.startsWith('/communities')) {
             title = 'Corporate Communities';
           } else if (loc.startsWith('/pricing')) {
@@ -75,6 +77,10 @@ class AdminRouter {
           GoRoute(
             path: '/dashboard',
             builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/sos',
+            builder: (context, state) => const ReportsScreen(initialTabIndex: 0),
           ),
           GoRoute(
             path: '/users',
@@ -98,7 +104,7 @@ class AdminRouter {
           ),
           GoRoute(
             path: '/reports',
-            builder: (context, state) => const ReportsScreen(),
+            builder: (context, state) => const ReportsScreen(initialTabIndex: 1),
           ),
           GoRoute(
             path: '/communities',

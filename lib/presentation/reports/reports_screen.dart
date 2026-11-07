@@ -10,7 +10,9 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/status_badge.dart';
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key});
+  final int initialTabIndex;
+
+  const ReportsScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
@@ -24,7 +26,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: (widget.initialTabIndex >= 0 && widget.initialTabIndex < 3)
+          ? widget.initialTabIndex
+          : 0,
+    );
     _fetch();
   }
 

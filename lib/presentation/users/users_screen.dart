@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../bloc/users/users_cubit.dart';
 import '../../bloc/users/users_state.dart';
 import '../../core/theme/app_colors.dart';
@@ -42,6 +43,15 @@ class _UsersScreenState extends State<UsersScreen> {
         );
   }
 
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _handleStatusChange(AdminUserItem user, String newStatus) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -64,12 +74,187 @@ class _UsersScreenState extends State<UsersScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? 'User status updated successfully' : 'Failed to update status'),
+            content: Text(success ? 'User status updated successfully to [$newStatus]' : 'Failed to update status'),
             backgroundColor: success ? AppColors.success : AppColors.error,
           ),
         );
       }
     }
+  }
+
+  void _showUserDetailsDialog(AdminUserItem user) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 540),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                        child: Text(
+                          user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : 'U',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user.displayName, style: AppTextStyles.h3),
+                          Text('@${user.username}', style: AppTextStyles.caption),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(dialogCtx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Overview Box
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildInfoItem('Phone Number', user.phone, Icons.phone_rounded),
+                        ),
+                        Expanded(
+                          child: _buildInfoItem('Email Address', user.email ?? 'Not provided', Icons.email_rounded),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildInfoItem('Gender', user.gender.replaceAll('_', ' '), Icons.person_rounded),
+                        ),
+                        Expanded(
+                          child: _buildInfoItem(
+                            'Member Since',
+                            user.createdAt?.split('T').first ?? 'Verified',
+                            Icons.calendar_today_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('Platform Persona: ', style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+                            StatusBadge(status: user.isDriver ? 'DRIVER' : 'COMMUTER'),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            const Text('Status: ', style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+                            StatusBadge(status: user.status),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Action Toolbar
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
+                    label: const Text('Call User'),
+                    onPressed: () => _launchUrl('tel:${user.phone}'),
+                  ),
+                  const Spacer(),
+                  if (user.status != 'ACTIVE')
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.check, size: 16),
+                      label: const Text('Reactivate'),
+                      onPressed: () {
+                        Navigator.of(dialogCtx).pop();
+                        _handleStatusChange(user, 'ACTIVE');
+                      },
+                    ),
+                  if (user.status == 'ACTIVE') ...[
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
+                      icon: const Icon(Icons.pause_circle_outline, size: 16),
+                      label: const Text('Suspend'),
+                      onPressed: () {
+                        Navigator.of(dialogCtx).pop();
+                        _handleStatusChange(user, 'SUSPENDED');
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.errorBg,
+                        foregroundColor: AppColors.error,
+                      ),
+                      icon: const Icon(Icons.block, size: 16),
+                      label: const Text('Block Account'),
+                      onPressed: () {
+                        Navigator.of(dialogCtx).pop();
+                        _handleStatusChange(user, 'BLOCKED');
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.blueGrey),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13), maxLines: 1),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -184,7 +369,7 @@ class _UsersScreenState extends State<UsersScreen> {
                     if (isMobile) {
                       return ListView.separated(
                         itemCount: users.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) => _buildMobileUserCard(users[index]),
                       );
                     }
@@ -236,25 +421,35 @@ class _UsersScreenState extends State<UsersScreen> {
                                   DataCell(StatusBadge(status: u.status)),
                                   DataCell(Text(u.gender, style: AppTextStyles.caption)),
                                   DataCell(
-                                    PopupMenuButton<String>(
-                                      icon: const Icon(Icons.more_vert, size: 18),
-                                      onSelected: (val) => _handleStatusChange(u, val),
-                                      itemBuilder: (context) => [
-                                        if (u.status != 'ACTIVE')
-                                          const PopupMenuItem(
-                                            value: 'ACTIVE',
-                                            child: Text('Reactivate Account'),
-                                          ),
-                                        if (u.status != 'SUSPENDED')
-                                          const PopupMenuItem(
-                                            value: 'SUSPENDED',
-                                            child: Text('Suspend Account'),
-                                          ),
-                                        if (u.status != 'BLOCKED')
-                                          const PopupMenuItem(
-                                            value: 'BLOCKED',
-                                            child: Text('Block Account'),
-                                          ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.remove_red_eye_outlined, color: AppColors.info),
+                                          tooltip: 'View Profile Details',
+                                          onPressed: () => _showUserDetailsDialog(u),
+                                        ),
+                                        PopupMenuButton<String>(
+                                          icon: const Icon(Icons.more_vert, size: 18),
+                                          onSelected: (val) => _handleStatusChange(u, val),
+                                          itemBuilder: (context) => [
+                                            if (u.status != 'ACTIVE')
+                                              const PopupMenuItem(
+                                                value: 'ACTIVE',
+                                                child: Text('Reactivate Account'),
+                                              ),
+                                            if (u.status != 'SUSPENDED')
+                                              const PopupMenuItem(
+                                                value: 'SUSPENDED',
+                                                child: Text('Suspend Account'),
+                                              ),
+                                            if (u.status != 'BLOCKED')
+                                              const PopupMenuItem(
+                                                value: 'BLOCKED',
+                                                child: Text('Block Account'),
+                                              ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -288,7 +483,10 @@ class _UsersScreenState extends State<UsersScreen> {
               children: [
                 CircleAvatar(
                   backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                  child: Text(user.displayName.isNotEmpty ? user.displayName[0] : 'U'),
+                  child: Text(
+                    user.displayName.isNotEmpty ? user.displayName[0] : 'U',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -305,33 +503,13 @@ class _UsersScreenState extends State<UsersScreen> {
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 StatusBadge(status: user.isDriver ? 'DRIVER' : 'COMMUTER'),
-                PopupMenuButton<String>(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.lightBorder),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Actions', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        Icon(Icons.arrow_drop_down, size: 16),
-                      ],
-                    ),
-                  ),
-                  onSelected: (val) => _handleStatusChange(user, val),
-                  itemBuilder: (context) => [
-                    if (user.status != 'ACTIVE')
-                      const PopupMenuItem(value: 'ACTIVE', child: Text('Activate')),
-                    if (user.status != 'SUSPENDED')
-                      const PopupMenuItem(value: 'SUSPENDED', child: Text('Suspend')),
-                    if (user.status != 'BLOCKED')
-                      const PopupMenuItem(value: 'BLOCKED', child: Text('Block')),
-                  ],
+                const Spacer(),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.remove_red_eye_outlined, size: 14),
+                  label: const Text('Details'),
+                  onPressed: () => _showUserDetailsDialog(user),
                 ),
               ],
             ),
@@ -341,4 +519,3 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 }
-

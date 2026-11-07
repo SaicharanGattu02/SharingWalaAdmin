@@ -31,6 +31,7 @@ class AdminSidebar extends StatelessWidget {
 
   static const List<AdminSidebarItem> mainItems = [
     AdminSidebarItem(title: 'Dashboard', icon: Icons.dashboard_outlined, route: '/dashboard'),
+    AdminSidebarItem(title: 'Emergency SOS', icon: Icons.emergency_rounded, route: '/sos', badge: 'LIVE'),
     AdminSidebarItem(title: 'Users', icon: Icons.people_outline, route: '/users'),
     AdminSidebarItem(title: 'Driver Verification', icon: Icons.verified_user_outlined, route: '/drivers'),
     AdminSidebarItem(title: 'Vehicles', icon: Icons.directions_car_outlined, route: '/vehicles'),
@@ -114,7 +115,7 @@ class AdminSidebar extends StatelessWidget {
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               itemCount: mainItems.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 4),
+              separatorBuilder: (_, _) => const SizedBox(height: 4),
               itemBuilder: (context, index) {
                 final item = mainItems[index];
                 final isActive = currentRoute.startsWith(item.route);
@@ -139,7 +140,9 @@ class AdminSidebar extends StatelessWidget {
                           Icon(
                             item.icon,
                             size: 20,
-                            color: isActive ? const Color(0xFF0F172A) : Colors.white70,
+                            color: isActive
+                                ? const Color(0xFF0F172A)
+                                : (item.route == '/sos' ? Colors.redAccent : Colors.white70),
                           ),
                           if (!isCollapsed) ...[
                             const SizedBox(width: 14),
