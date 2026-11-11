@@ -1,6 +1,6 @@
 class AdminEndpoints {
   // Base URLs
-  static const String baseUrl = 'http://localhost:5000/api/v1/admin';
+  static const String baseUrl = 'https://api.sharingwala.com/api/v1/admin';
 
   // Auth
   static const String login = '$baseUrl/auth/login';
