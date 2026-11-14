@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../bloc/auth/admin_auth_cubit.dart';
+import '../../bloc/auth/admin_auth_state.dart';
 import '../../widgets/responsive_layout.dart';
 import 'admin_header.dart';
 import 'admin_sidebar.dart';
@@ -26,8 +30,14 @@ class _AdminShellState extends State<AdminShell> {
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
-    return Scaffold(
-      key: _scaffoldKey,
+    return BlocListener<AdminAuthCubit, AdminAuthState>(
+      listener: (context, state) {
+        if (state is AdminAuthUnauthenticated) {
+          context.go('/login');
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
       drawer: isDesktop
           ? null
           : Drawer(
@@ -59,7 +69,8 @@ class _AdminShellState extends State<AdminShell> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 

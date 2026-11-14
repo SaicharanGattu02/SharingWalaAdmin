@@ -56,6 +56,7 @@ class AdminAuthService {
     await prefs.remove(_keyToken);
     await prefs.remove(_keyRefreshToken);
     await prefs.remove(_keyAdminData);
+    await prefs.clear(); // Complete purge of all local storage keys
   }
 }
 

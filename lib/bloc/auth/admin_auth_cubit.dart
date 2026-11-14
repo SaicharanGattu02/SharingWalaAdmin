@@ -65,7 +65,10 @@ class AdminAuthCubit extends Cubit<AdminAuthState> {
   }
 
   Future<void> logout() async {
-    await repo.logout();
+    emit(AdminAuthLoading());
+    try {
+      await repo.logout();
+    } catch (_) {}
     emit(AdminAuthUnauthenticated());
   }
 }
