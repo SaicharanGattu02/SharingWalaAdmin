@@ -74,6 +74,41 @@ class AdminAuthResponse {
   }
 }
 
+class AdminLoginStepResult {
+  final bool requiresOtp;
+  final String tempToken;
+  final String phone;
+  final String maskedPhone;
+  final String message;
+  final AdminAuthResponse? authResponse;
+
+  AdminLoginStepResult({
+    required this.requiresOtp,
+    this.tempToken = '',
+    this.phone = '',
+    this.maskedPhone = '',
+    this.message = '',
+    this.authResponse,
+  });
+
+  factory AdminLoginStepResult.fromJson(Map<String, dynamic> json) {
+    final requiresOtp = json['requiresOtp'] == true;
+    if (requiresOtp) {
+      return AdminLoginStepResult(
+        requiresOtp: true,
+        tempToken: json['tempToken']?.toString() ?? '',
+        phone: json['phone']?.toString() ?? '',
+        maskedPhone: json['maskedPhone']?.toString() ?? '',
+        message: json['message']?.toString() ?? 'Verification code sent',
+      );
+    }
+    return AdminLoginStepResult(
+      requiresOtp: false,
+      authResponse: AdminAuthResponse.fromJson(json),
+    );
+  }
+}
+
 // ==============================================================================
 // 2. DASHBOARD STATS MODEL
 // ==============================================================================

@@ -4,7 +4,9 @@ import '../../services/api_client.dart';
 import '../api_config/admin_endpoints.dart';
 
 abstract class AdminRemoteDataSource {
-  Future<AdminAuthResponse> login({required String email, required String password});
+  Future<AdminLoginStepResult> login({required String email, required String password});
+  Future<AdminAuthResponse> verifyOtp({required String tempToken, required String otp});
+  Future<bool> resendOtp({required String tempToken});
   Future<DashboardStats> getDashboardStats();
   Future<List<AdminUserItem>> getUsers({String? search, String? status, String? role});
   Future<bool> updateUserStatus(String userId, String status, {String? reason});
@@ -50,13 +52,32 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   final Dio dio = ApiClient.dio;
 
   @override
-  Future<AdminAuthResponse> login({required String email, required String password}) async {
+  Future<AdminLoginStepResult> login({required String email, required String password}) async {
     final response = await dio.post(
       AdminEndpoints.login,
       data: {'email': email, 'password': password},
     );
     final data = response.data['data'] as Map<String, dynamic>;
+    return AdminLoginStepResult.fromJson(data);
+  }
+
+  @override
+  Future<AdminAuthResponse> verifyOtp({required String tempToken, required String otp}) async {
+    final response = await dio.post(
+      AdminEndpoints.verifyOtp,
+      data: {'tempToken': tempToken, 'otp': otp},
+    );
+    final data = response.data['data'] as Map<String, dynamic>;
     return AdminAuthResponse.fromJson(data);
+  }
+
+  @override
+  Future<bool> resendOtp({required String tempToken}) async {
+    final response = await dio.post(
+      AdminEndpoints.resendOtp,
+      data: {'tempToken': tempToken},
+    );
+    return response.statusCode == 200;
   }
 
   @override

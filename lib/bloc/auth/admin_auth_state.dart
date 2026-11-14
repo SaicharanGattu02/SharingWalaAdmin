@@ -12,6 +12,23 @@ class AdminAuthInitial extends AdminAuthState {}
 
 class AdminAuthLoading extends AdminAuthState {}
 
+class AdminAuthOtpRequired extends AdminAuthState {
+  final String tempToken;
+  final String maskedPhone;
+  final String phone;
+  final String message;
+
+  const AdminAuthOtpRequired({
+    required this.tempToken,
+    required this.maskedPhone,
+    required this.phone,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [tempToken, maskedPhone, phone, message];
+}
+
 class AdminAuthAuthenticated extends AdminAuthState {
   final AdminProfile admin;
   const AdminAuthAuthenticated({required this.admin});

@@ -105,4 +105,40 @@ class ApiClient {
 
     return dio;
   }
+
+  static String formatError(dynamic error) {
+    if (error is DioException) {
+      if (error.response?.data is Map<String, dynamic>) {
+        final data = error.response!.data as Map<String, dynamic>;
+        if (data['message'] != null && data['message'].toString().isNotEmpty) {
+          return data['message'].toString();
+        }
+      }
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'Connection timed out. Please check your internet connection.';
+        case DioExceptionType.connectionError:
+          return 'Unable to reach the server. Please check your network connection or verify server status.';
+        case DioExceptionType.badResponse:
+          final statusCode = error.response?.statusCode;
+          if (statusCode == 401) {
+            return 'Invalid credentials or verification code.';
+          } else if (statusCode == 403) {
+            return 'Access denied. Super administrator privileges required.';
+          } else if (statusCode == 404) {
+            return 'Requested resource not found.';
+          } else if (statusCode != null && statusCode >= 500) {
+            return 'Server temporary error ($statusCode). Please try again shortly.';
+          }
+          return 'Request failed with status code $statusCode.';
+        case DioExceptionType.cancel:
+          return 'Request was cancelled.';
+        default:
+          return 'Network request failed. Please check your connection.';
+      }
+    }
+    return error.toString().replaceAll('Exception:', '').trim();
+  }
 }

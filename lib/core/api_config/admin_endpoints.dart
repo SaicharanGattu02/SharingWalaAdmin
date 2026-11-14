@@ -4,6 +4,8 @@ class AdminEndpoints {
 
   // Auth
   static const String login = '$baseUrl/auth/login';
+  static const String verifyOtp = '$baseUrl/auth/verify-otp';
+  static const String resendOtp = '$baseUrl/auth/resend-otp';
   static const String refresh = '$baseUrl/auth/refresh';
   static const String me = '$baseUrl/auth/me';
   static const String logout = '$baseUrl/auth/logout';
@@ -82,6 +84,6 @@ class AdminEndpoints {
   static String updateSosStatus(String id) => '$baseUrl/sos/$id/status';
 
   // Platform & App Update Config
-  static const String appConfig = 'http://localhost:5000/api/v1/common/config';
+  static const String appConfig = 'https://api.sharingwala.com/api/v1/common/config';
 }
 
